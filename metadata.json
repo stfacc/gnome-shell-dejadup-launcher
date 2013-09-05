@@ -1,0 +1,6 @@
+{
+    "shell-version": ["3.8"],
+    "uuid": "dejadup-launcher@stefano.facchini",
+    "name": "Dejadup Launcher",
+    "description": "When the disk used by DejaDup for the backups is plugged, a button is added to the run notification which allow the user to immediately start a backup."
+}
