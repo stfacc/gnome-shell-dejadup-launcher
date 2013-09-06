@@ -20,58 +20,58 @@ const ModifiedAutorunTransientNotification = new Lang.Class({
 
         this._dejadupInstalled = true;
 
-        this._originalInit = AutorunManager.AutorunTransientNotification.prototype._init;
-        AutorunManager.AutorunTransientNotification.prototype._buttonForBackup = this._buttonForBackup;
+        this._notificationProto = AutorunManager.AutorunTransientNotification.prototype;
+
+        let settings = new Gio.Settings({ schema: DEJADUP_SCHEMA });
+        this._notificationProto._uuid = settings.get_string('uuid');
+
+        this._originalInit = this._notificationProto._init;
+        this._notificationProto._buttonForBackup = this._buttonForBackup;
     },
 
-    _modifiedInit: function() {
-        return function(manager, source) {
-            MessageTray.Notification.prototype._init.call(this, source, source.title, null, { customContent: true });
+    _modifiedInit: function(manager, source) {
+        MessageTray.Notification.prototype._init.call(this, source, source.title, null, { customContent: true });
 
-            ////////////////////////////////////////
-            // Normal content of the notification //
-            ////////////////////////////////////////
-            this._manager = manager;
-            this._box = new St.BoxLayout({ style_class: 'hotplug-transient-box',
-                                           vertical: true });
-            this.addActor(this._box);
+        ////////////////////////////////////////
+        // Normal content of the notification //
+        ////////////////////////////////////////
+        this._manager = manager;
+        this._box = new St.BoxLayout({ style_class: 'hotplug-transient-box',
+                                       vertical: true });
+        this.addActor(this._box);
 
-            this._mount = source.mount;
+        this._mount = source.mount;
 
-            source.apps.forEach(Lang.bind(this, function (app) {
-                let actor = this._buttonForApp(app);
+        source.apps.forEach(Lang.bind(this, function (app) {
+            let actor = this._buttonForApp(app);
 
-                if (actor)
-                    this._box.add(actor, { x_fill: true,
-                                           x_align: St.Align.START });
-            }));
+            if (actor)
+                this._box.add(actor, { x_fill: true,
+                                       x_align: St.Align.START });
+        }));
 
-            this._box.add(this._buttonForEject(), { x_fill: true,
-                                                    x_align: St.Align.START });
+        this._box.add(this._buttonForEject(), { x_fill: true,
+                                                x_align: St.Align.START });
 
-            // set the notification to transient and urgent, so that it
-            // expands out
-            this.setTransient(true);
-            this.setUrgency(MessageTray.Urgency.CRITICAL);
+        // set the notification to transient and urgent, so that it
+        // expands out
+        this.setTransient(true);
+        this.setUrgency(MessageTray.Urgency.CRITICAL);
 
-            ///////////////////////////
-            // Our new Backup button //
-            ///////////////////////////
-            let volume = this._mount.get_volume();
-            if (!volume)
-                return;
+        ///////////////////////////
+        // Our new Backup button //
+        ///////////////////////////
+        let volume = this._mount.get_volume();
+        if (!volume)
+            return;
 
-            let uuid = volume.get_identifier(Gio.VOLUME_IDENTIFIER_KIND_UUID);
+        let uuid = volume.get_identifier(Gio.VOLUME_IDENTIFIER_KIND_UUID);
 
-            let settings = new Gio.Settings({ schema: DEJADUP_SCHEMA });
-            let backupUuid = settings.get_string('uuid');
+        if (uuid != this._uuid)
+            return;
 
-            if (uuid != backupUuid)
-                return;
-
-            this._box.add(this._buttonForBackup(), { x_fill: true,
-                                                     x_align: St.Align.START });
-        };
+        this._box.add(this._buttonForBackup(), { x_fill: true,
+                                                 x_align: St.Align.START });
     },
 
     _buttonForBackup: function() {
@@ -108,12 +108,12 @@ const ModifiedAutorunTransientNotification = new Lang.Class({
 
     enable: function() {
         if (this._dejadupInstalled)
-            AutorunManager.AutorunTransientNotification.prototype._init = this._modifiedInit();
+            this._notificationProto._init = this._modifiedInit;
     },
 
     disable: function() {
         if (this._dejadupInstalled)
-            AutorunManager.AutorunTransientNotification.prototype._init = this._originalInit;
+            this._notificationProto._init = this._originalInit;
     }
 });
 
