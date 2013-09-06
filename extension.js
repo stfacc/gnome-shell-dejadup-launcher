@@ -21,6 +21,7 @@ const ModifiedAutorunTransientNotification = new Lang.Class({
         this._dejadupInstalled = true;
 
         this._originalInit = AutorunManager.AutorunTransientNotification.prototype._init;
+        AutorunManager.AutorunTransientNotification.prototype._buttonForBackup = this._buttonForBackup;
     },
 
     _modifiedInit: function() {
@@ -68,37 +69,41 @@ const ModifiedAutorunTransientNotification = new Lang.Class({
             if (uuid != backupUuid)
                 return;
 
-            let box = new St.BoxLayout();
-            let icon = new St.Icon({ icon_name: 'deja-dup-symbolic',
-                                     style_class: 'hotplug-notification-item-icon' });
-            box.add(icon);
-
-            let label = new St.Bin({ y_align: St.Align.MIDDLE,
-                                     child: new St.Label
-                                     ({ text: "Backup" })
-                                   });
-            box.add(label);
-
-            let button = new St.Button({ child: box,
-                                         x_fill: true,
-                                         x_align: St.Align.START,
-                                         button_mask: St.ButtonMask.ONE,
-                                         style_class: 'hotplug-notification-item' });
-
-            button.connect('clicked', Lang.bind(this, function() {
-                try {
-                    let app = Gio.DesktopAppInfo.new('deja-dup.desktop');
-                    app.launch([], global.create_app_launch_context());
-                } catch (e) {
-                    log('Unable to launch DejaDup: ' + e.toString());
-                }
-
-                this.destroy();
-            }));
-
-            this._box.add(button, { x_fill: true,
-                                    x_align: St.Align.START });
+            this._box.add(this._buttonForBackup(), { x_fill: true,
+                                                     x_align: St.Align.START });
         };
+    },
+
+    _buttonForBackup: function() {
+        let box = new St.BoxLayout();
+        let icon = new St.Icon({ icon_name: 'deja-dup-symbolic',
+                                 style_class: 'hotplug-notification-item-icon' });
+        box.add(icon);
+
+        let label = new St.Bin({ y_align: St.Align.MIDDLE,
+                                 child: new St.Label
+                                 ({ text: "Backup" })
+                               });
+        box.add(label);
+
+        let button = new St.Button({ child: box,
+                                     x_fill: true,
+                                     x_align: St.Align.START,
+                                     button_mask: St.ButtonMask.ONE,
+                                     style_class: 'hotplug-notification-item' });
+
+        button.connect('clicked', Lang.bind(this, function() {
+            try {
+                let app = Gio.DesktopAppInfo.new('deja-dup.desktop');
+                app.launch([], global.create_app_launch_context());
+            } catch (e) {
+                log('Unable to launch DejaDup: ' + e.toString());
+            }
+
+            this.destroy();
+        }));
+
+        return button;
     },
 
     enable: function() {
