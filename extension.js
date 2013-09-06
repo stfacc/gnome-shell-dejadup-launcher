@@ -21,7 +21,6 @@ const ModifiedAutorunTransientNotification = new Lang.Class({
         this._dejadupInstalled = true;
 
         this._originalInit = AutorunManager.AutorunTransientNotification.prototype._init;
-
     },
 
     _modifiedInit: function() {
@@ -87,8 +86,12 @@ const ModifiedAutorunTransientNotification = new Lang.Class({
                                          style_class: 'hotplug-notification-item' });
 
             button.connect('clicked', Lang.bind(this, function() {
-                let app = Gio.DesktopAppInfo.new('deja-dup.desktop');
-                app.launch([], global.create_app_launch_context());
+                try {
+                    let app = Gio.DesktopAppInfo.new('deja-dup.desktop');
+                    app.launch([], global.create_app_launch_context());
+                } catch (e) {
+                    log('Unable to launch DejaDup: ' + e.toString());
+                }
 
                 this.destroy();
             }));
